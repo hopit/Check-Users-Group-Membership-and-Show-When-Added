@@ -2,12 +2,14 @@
 
 Import-Module ActiveDirectory
 
-#Username you would like to search
-$username = "username" 
-$userobj = Get-ADUser $username 
+#Get Username and set Variable
+    [string]$username = $( Read-Host "Username you wish to search" )
 
+$userobj = Get-ADUser $username 
+write-host "This may take up to 20 seconds to complete. Results will open in a separate window." -Foregroundcolor Yellow
 #Active Directory Server To Connect To
-$ActiveDirectoryServer = "domaincontroller.test.com"
+$DomainName = (Get-ADDomain).DNSRoot
+$ActiveDirectoryServer = Get-ADDomainController -Discover -Domain $DomainName | Select-Object -ExpandProperty Hostname 
 
 Get-ADUser $userobj.DistinguishedName -Properties memberOf | 
 Select-Object -ExpandProperty memberOf | 
@@ -16,4 +18,5 @@ Get-ADReplicationAttributeMetadata $_ -Server $ActiveDirectoryServer -ShowAllLin
 Where-Object {$_.AttributeName -eq 'member' -and 
 $_.AttributeValue -eq $userobj.DistinguishedName} | 
 Select-Object FirstOriginatingCreateTime, Object, AttributeValue 
-} | Sort-Object FirstOriginatingCreateTime -Descending | Out-GridView
+} | Sort-Object FirstOriginatingCreateTime -Descending | Out-GridView -title "IT Service Desk Toolkit - Groups $username is a member of"
+write-host "Loading user groups complete. Have a nice day :)" -Foregroundcolor Yellow
